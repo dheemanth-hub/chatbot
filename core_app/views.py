@@ -26,9 +26,17 @@ def get_fallback_reply(message):
             "Ollama is a tool for running local AI models on your own machine. "
             "It lets you chat with models locally without sending everything to the cloud."
         )
+    if "rag" in text:
+        return (
+            "RAG stands for Retrieval-Augmented Generation. It is a way to improve AI answers by first retrieving relevant information from a knowledge source and then using that information to generate a better response."
+        )
     if "hello" in text or "hi" in text:
-        return "Hello! I can help explain Ollama or answer simple questions."
-    return "I can help explain Ollama or answer simple questions."
+        return "Hello! I can help explain Ollama, RAG, or answer simple questions."
+    if "ai" in text or "artificial intelligence" in text:
+        return "AI means artificial intelligence. It is the ability of machines to perform tasks that usually need human thinking, such as understanding language, recognizing patterns, and making decisions."
+    if "how" in text or "what" in text or "why" in text:
+        return "I can explain common AI topics like Ollama and RAG in simple terms."
+    return f"I can help with that. Your message was: {message}."
 
 
 @login_required
@@ -72,6 +80,7 @@ def chat_api(request):
                 "model": "llama3.2",
                 "prompt": contextual_prompt,
                 "stream": False,
+                "options": {"temperature": 0.7},
             },
             timeout=60,
         )

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load tz %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chatbot</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; background: #f6f8fb; }
+        .box { max-width: 720px; margin: auto; background: white; padding: 1.5rem; border-radius: 12px; }
+        #chat-log { min-height: 300px; border: 1px solid #e5e7eb; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+        .msg { margin-bottom: 0.7rem; }
+        .top-bar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+}
+.top-bar a {
+    color: #2563eb;
+    text-decoration: none;
+}
+        .user { color: #2563eb; font-weight: bold; }
+        .bot { color: #0f766e; font-weight: bold; }
+        .timestamp {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-left: 0.5rem;
+}
+        .error .bot { color: #b91c1c; }
+        .controls { display: flex; gap: 0.75rem; align-items: center; }
+        input { flex: 1; padding: 0.7rem; border: 1px solid #ccc; border-radius: 6px; }
+        button { padding: 0.7rem 1rem; border: none; border-radius: 6px; background: #2563eb; color: white; cursor: pointer; }
+        button:disabled { background: #94a3b8; cursor: default; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>Simple Django + Ollama Chatbot</h1>
+        <h2>Conversation history</h2>
+        <div class="top-bar">
+            <span>Welcome, {{ request.user.username }}</span>
+            <a href="{% url 'logout' %}">Logout</a>
+        </div>
+        <div id="chat-log">
+            {% for message in messages %}
+                <div class="msg">
+                    <span class="{{ message.sender }}">{{ message.sender|title }}:</span>
+                    <span class="timestamp">{{ message.created_at|localtime|date:"H:i" }}</span>
+                    {{ message.text }}
+                </div>
+            {% endfor %}
+        </div>
+        <div class="controls">
+            <input id="message" placeholder="Ask something..." />
+            <button id="send-button" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const input = document.getElementById('message');
+        const log = document.getElementById('chat-log');
+        const sendButton = document.getElementById('send-button');
+
+        input.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+
+        function setLoading(isLoading) {
+            sendButton.disabled = isLoading;
+            input.disabled = isLoading;
+            sendButton.textContent = isLoading ? 'Loading...' : 'Send';
+        }
+
+        async function sendMessage() {
+            const text = input.value.trim();
+            if (!text) return;
+
+            log.innerHTML += `<div class="msg"><span class="user">You:</span> ${text}</div>`;
+            input.value = '';
+            input.focus();
+
+            const loadingId = `loading-${Date.now()}`;
+            log.innerHTML += `<div class="msg loading" id="${loadingId}"><span class="bot">Bot:</span> Preparing answer...</div>`;
+            log.scrollTop = log.scrollHeight;
+
+            setLoading(true);
+
+            try {
+                const response = await fetch('/api/chat-api/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+                const data = await response.json();
+                const loadingElement = document.getElementById(loadingId);
+                if (loadingElement) {
+                    loadingElement.outerHTML = `<div class="msg"><span class="bot">Bot:</span> ${data.reply}</div>`;
+                } else {
+                    log.innerHTML += `<div class="msg"><span class="bot">Bot:</span> ${data.reply}</div>`;
+                }
+            } catch (error) {
+                const loadingElement = document.getElementById(loadingId);
+                if (loadingElement) {
+                    loadingElement.outerHTML = `<div class="msg error"><span class="bot">Bot:</span> ${error.message}</div>`;
+                } else {
+                    log.innerHTML += `<div class="msg error"><span class="bot">Bot:</span> ${error.message}</div>`;
+                }
+            } finally {
+                setLoading(false);
+                log.scrollTop = log.scrollHeight;
+            }
+        }
+    </script>
+</body>
+</html>

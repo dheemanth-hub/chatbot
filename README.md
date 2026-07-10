@@ -2,7 +2,7 @@
 
 ## Overview
 
-This Django project is a simple chatbot application with user authentication, chat history storage, and an Ollama-based backend API.
+This Django project is a simple chatbot application with user authentication, chat history storage, and a Groq API-based backend.
 
 Users must log in to access the chat page. The application tracks chat history in the database and displays it on the chat screen.
 
@@ -146,4 +146,4 @@ def logout_view(request):
 
 - Keep `DEBUG = True` only during development.
 - If you want a production-ready setup, add `ALLOWED_HOSTS` and switch `DEBUG` to `False`.
-- The chat backend expects a local Ollama instance at `http://127.0.0.1:11434/api/generate`.
+- The chat backend uses the Groq API key from `.env` and sends prompts to the configured Groq model.
